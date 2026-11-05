@@ -89,7 +89,7 @@ func (r *wikiPageRepository) wikiEmptyInLinksPredicate() string {
 	if r.db != nil && r.db.Dialector != nil && r.db.Dialector.Name() == "sqlite" {
 		return "(in_links IS NULL OR json_array_length(in_links) = 0)"
 	}
-	return "(in_links IS NULL OR in_links = '[]'::JSONB)"
+	return "(in_links IS NULL OR in_links IN ('[]'::JSONB, 'null'::JSONB))"
 }
 
 // Create inserts a new wiki page record
@@ -548,7 +548,8 @@ func (r *wikiPageRepository) ListBySourceRef(ctx context.Context, kbID string, s
 
 	var pages []*types.WikiPage
 	if err := r.db.WithContext(ctx).
-		Where("knowledge_base_id = ? AND (source_refs @> ?::jsonb OR source_refs::text LIKE ?)",
+		Where(
+			"knowledge_base_id = ? AND (source_refs @> ?::jsonb OR source_refs::text LIKE ?)",
 			kbID,
 			string(needle),
 			likePattern,
@@ -586,7 +587,8 @@ func (r *wikiPageRepository) ListSlugsBySourceRef(ctx context.Context, kbID stri
 	var slugs []string
 	if err := r.db.WithContext(ctx).
 		Model(&types.WikiPage{}).
-		Where("knowledge_base_id = ? AND (source_refs @> ?::jsonb OR source_refs::text LIKE ?)",
+		Where(
+			"knowledge_base_id = ? AND (source_refs @> ?::jsonb OR source_refs::text LIKE ?)",
 			kbID,
 			string(needle),
 			likePattern,
